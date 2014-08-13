@@ -4,40 +4,45 @@
 #include "Arduino.h"
 #include <LinearActuator.h>
 
-class KarKontroller {
-  enum gear_t {
-    PARK = 0,
-    REVERSE,
-    NEUTRAL,
-    DRIVE,
-    SECOND,
-    FIRST,
-    NUM_GEARS
-  };
-  
-  struct LinearActuatorConfig {
-    uint16_t min_pos;
-    uint16_t max_pos;
-  };
+enum gear_t {
+  PARK = 0,
+  REVERSE,
+  NEUTRAL,
+  DRIVE,
+  SECOND,
+  FIRST,
+  NUM_GEARS
+};
 
-  class Config {
-   public:
-    Config();
+struct LinearActuatorConfig {
+  uint8_t id;
+  uint8_t motor_id;
+}
 
-    LinearActuatorConfig throttle;
-    LinearActuatorConfig brake;
-    LinearActuatorConfig steering;
-    uint16_t gear_pos[gear_t::NUM_GEARS];
-  
-    //bool readFromEeprom(uint16_t address);
-    //void writeToEeprom(uint16_t address);
-  
-   private:
-    //void writeUint16ToEeprom(uint16_t address, uint16_t data);
-    //void writeLinearControllerConfigToEeprom(uint16_t address,
-    //                                         const LinearActuatorConfig& data);
-  };
-  
+struct LinearActuatorRange {
+  uint16_t min_pos;
+  uint16_t max_pos;
+};
+
+class Config {
+ public:
+  Config();
+
+  LinearActuatorRange throttle_range;
+  LinearActuatorRange brake_range;
+  LinearActuatorRange steering_range;
+  uint16_t gear_pos[gear_t::NUM_GEARS];
+
+  //bool readFromEeprom(uint16_t address);
+  //void writeToEeprom(uint16_t address);
+
+ private:
+  //void writeUint16ToEeprom(uint16_t address, uint16_t data);
+  //void writeLinearControllerConfigToEeprom(uint16_t address,
+  //                                         const LinearActuatorConfig& data);
+};
+
+class KarKontroller {  
   KarKontroller();
   
   // Sets the config
@@ -93,6 +98,16 @@ class KarKontroller {
 
  private:
  
+  // Gets the position (from 0 - 255) of a LinearActuator. This is used by
+  // functions such as getSteering() and getBrake();
+  uint8_t getLinearActuatorPos(const LinearActuatorRangeg& range,
+                               const LinearActuator& actuator);
+  
+  // Sets the target position (from 0 - 255) of a LinearActuator.
+  void setLinearActuatorTarget(uint8_t value,
+                               const LinearActuatorRange& range,
+                               LinearActuator* actuator)
+ 
   enum state_t {
     OFF,
     START,
@@ -108,9 +123,16 @@ class KarKontroller {
   Config config_;
   
   uint8_t throttle_target_;
+  LinearActuator throttle_;
+  
   uint8_t brake_target_;
+  LinearActuator brake_;
+  
   uint8_t steering_target_;
-  gear_t gear_;
+  LinearActuator steering_;
+  
+  gear_t gear_target_;
+  LinearActuator shifter_;
 }
 
 #endif

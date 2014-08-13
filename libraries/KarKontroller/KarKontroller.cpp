@@ -1,6 +1,6 @@
 #include "KarKontroller.h"
 
-KarKontroller::Config::Config() {
+Config::Config() {
   throttle.min = 100;
   throttle.max = 900;
   brake.min = 100;
@@ -22,13 +22,24 @@ KarKontroller::setConfig(const Config& config) {
   config_ = config;
 }
 
+// Helper functions for linear actuators.
+uint8_t KarKontroller::getLinearActuatorPos(const LinearActuatorConfig& config,
+                                            LinearActuator* actuator) {
+  uint8_t value = constrain(actuator->getPosition(),
+                            config.min, config.max);
+  return map(value, config.min, config.max, 0, 255);
+}
+  
+void KarKontroller::setLinearActuatorTarget(uint8_t target,
+                                            const LinearActuatorConfig& config,
+                                            LinearActuator* actuator) {
+  actuator->goToPosition(map(target, 0, 255, config.min, config.max));                            
+}
 
+
+// Throttle functions.
 uint8_t KarKontroller::getThrottle() {
-  uint16_t = contstrain()
-  return map(value, 
-             config_.throttle.min,
-             config_.throttle.max,
-             0, 255)
+  return getLinearActuatorPos(config_.throttle, &throttle_);
 }
 
 uint8_t KarKontroller::getThrottleTarget() {
@@ -36,27 +47,87 @@ uint8_t KarKontroller::getThrottleTarget() {
 }
 
 void KarKontroller::setThrottle(uint8_t target) {
-  if (state == DRIVE) {
+  // If we're in drive, use whatever value is passed in. If we're not in drive,
+  // use the lower of the existing or new throttle value (slow down)/
+  if (state == DRIVE || target < throttle_target_) {
     throttle_target_ = target;
+    setLinearActuatorTarget(target, config.throttle, &throttle);
   }
 }
+
+// Brake functions.
+uint8_t KarKontroller::getBrake() {
+  return getLinearActuatorPos(config_.brake, &brake_);
+}
+
+uint8_t KarKontroller::getBrakeTarget() {
+  return brake_target_;
+}
+
+void KarKontroller::setBrake(uint8_t target) {
+  // If we're in drive, use whatever value is passed in. If we're not in drive,
+  // use the higher of the existing or new brake value (slow down).
+  if (state == DRIVE || (target > brake_target_) {
+    brake_target_ = target;
+    setLinearActuatorTarget(target, config.brake, &brake);
+  }
+}
+
+
+// Steering functions.
+uint8_t KarKontroller::getSteering() {
+  return getLinearActuatorPos(config_.steering, &steering_);
+}
+
+uint8_t KarKontroller::getSteeringTarget() {
+  return steering_target_;
+}
+
+void KarKontroller::setSteering(uint8_t target) {
+  // You should always be able to turn the wheels.
+  steering_target_ = target;
+  setLinearActuatorTarget(target, config.steering, &steering);
+}
+
+
+// Controls the gear shift.
+gear_t KarKontroller::getGear() {
+  uint8_t value = shifter_.getPosition();
+  if (value < PARK) {
+    return PARK;
+  } else if (value > FIRST) {
+    return FIRST;
+  }
+  // For each set of adjacent gear, find the midpoint between them. Then
+  // check to see if the shifter is between the gear set point and the
+  // midpoint. If it is in that range, return the equivalent gear.
+  for (uint8_t i = 0; i < NUM_GEARS - 1; i++) {
+    uint16_t min = config_.gear_pos[i];
+    uint16_t max = config_.gear_pos[i+1];
+    uint16_t mid_point = min + ((max - min) / 2);
+    if (value > min && value <= mid_point) {
+      return i;
+    } else if (value < max && value > mid_point) {
+      return i + 1;
+    }
+  }
   
-  // Controls to get and set the brakes.
-  // The value is from 0 (off) - 255 (full brake).
-  uint8_t getBrake();
-  uint8_t getBrakeTarget();
-  void setBrake(uint8_t target);
-  
-  // Controls to set the steering
-  // The value is from 0 (full left) - 255 (full right). 127 is dead straight.
-  uint8_t getSteering();
-  uint8_t getSteeringTarget();
-  void setSteering(uint8_t target);
-  
-  // Controls the gear shift.
-  gear_t getGear();
-  gear_t getGearTarget
-  void setGear(gear_t gear);
+  return FIRST;
+}
+
+gear_t KarKontroller::getGearTarget() {
+  return gear_target_
+}
+
+void setGear(gear_t target) {
+  if (state_ == DRIVE || state_ == SHIFTING) {
+    gear_target_ = target;
+    state_ = SHIFTING;
+    if (state_ != SHIFTING) {
+      last_state_update_ = now();
+    }
+  }
+}
   
   // Turns the car on or off. Does nit actually start the car.
   turnOn():
