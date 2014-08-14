@@ -1,28 +1,23 @@
 
-#include <KarKontroller.h>
 #include <Sabertooth.h>
 #include <PS3BT.h>
 #include <usbhub.h>
 #include <LinearActuator.h>
-
+// Satisfy IDE, which only needs to see the include statment in the ino.
+#ifdef dobogusinclude
+#include <spi4teensy3.h>
+#endif
 
 #define BRAKE_POS_PIN 15
 #define SHIFTER_POS_PIN 14
 #define THROTTLE_POS_PIN 13
-#define STEERING_POS_PIN 12
-
-#define IGNITION_PIN 51
-#define STARTER_PIN 52
 
 Sabertooth throttleClutch(135, Serial1);
 Sabertooth steeringBrake(129, Serial1);
 
-LinearActuatorConfig throttle_config(&throttleClutch, 1, THROTTLE_POS_PIN);
-LinearActuatorConfig shifter_config(&throttleClutch, 2, SHIFTER_POS_PIN);
-LinearActuatorConfig steering_config(&steeringBrake, 1, STEERING_POS_PIN);
-LinearActuatorConfig brake_config(&steeringBrake, 2, BRAKE_POS_PIN);
-
-KarKonfig Ku(&throttle_config, &shifter_config, &steering_config, &brake_config, IGNITION_PIN, STARTER_PIN, gps);
+LinearActuator throttle(&throttleClutch, 1, THROTTLE_POS_PIN);
+LinearActuator shifter(&throttleClutch, 2, SHIFTER_POS_PIN);
+LinearActuator brake(&steeringBrake, 2, BRAKE_POS_PIN);
 
 USB Usb;
 //USBHub Hub1(&Usb); // Some dongles have a hub inside
@@ -41,36 +36,36 @@ void setup() {
   throttleClutch.setDeadband(10);
   steeringBrake.setDeadband(10);
 
+  Serial.print("steeringBrake: ");
+  Serial.println((unsigned int) &steeringBrake);
+
   if (Usb.Init() == -1) {
     Serial.print(F("\r\nOSC did not start"));
     while (1); //halt
   }
   Serial.print(F("\r\nPS3 Bluetooth Library Started"));
+  
+    throttleClutch.motor(1, 0);
+    throttleClutch.motor(2, 0);
+    steeringBrake.motor(1, 0);
+    steeringBrake.motor(2, 0 );
 }
 
+void incrementMotor(int* moto) {
+  *moto += 32;
+  if (*moto > 127) {
+    *moto = -127;
+  }
+}
+
+int translateHat(int hat) {
+  return map(hat, 0, 255, 0, 1023);
+}
 int last_update = 0;
 
 void loop() {
   Usb.Task();
   if (PS3.PS3Connected) {
-    ku.setSteering(PS3.getAnalogHat(LeftHatX));
-    uint8_t speed_control = PS3.getAnalogHat(LeftHatX);
-    if (speed_control >= 127) {
-      ku.setThrottle((speed_control - 127) * 2)
-      ku.setBrake(0)
-    } else {
-      ku.setThrottle(0);
-      ku.setBrake((127 - speed_control) * 2);
-    }
-    if (PS3.getButtonPress(TRIANGLE)) {
-      ku.setGear(PARK);
-    }
-    if (PS3.getButtonPress(CIRCLE)) {
-      ku.setGear(DRIVE);
-    }
-    if (PS3.getButtonPress(SQUARE)) {
-      ku.setGear(REVERSE);
-    }
 /*    Serial.print(F("\r\nThrottle: "));
     Serial.print(throttle.getPosition());
     Serial.print(F("\r\nBrake: "));
@@ -86,8 +81,22 @@ void loop() {
     Serial.print(F("\tRightHatY: "));
     Serial.print(translateHat(PS3.getAnalogHat(RightHatX)));
     Serial.println("");*/
-  } else {
+    if (millis() - last_update > 10) {
+      brake.goToPosition(translateHat(PS3.getAnalogHat(LeftHatY)));
+      throttle.goToPosition(translateHat(PS3.getAnalogHat(RightHatX)));
+      shifter.goToPosition(translateHat(PS3.getAnalogHat(RightHatY)));
+      
+      //steeringBrake.motor(1, PS3.getAnalogHat(LeftHatX) - 128);
+      last_update = millis();
+     }
+
+   } else {
 
   }
-  ku.update(); 
+    
+    throttle.update();
+    brake.update();
+    shifter.update();
+
+ 
 }
