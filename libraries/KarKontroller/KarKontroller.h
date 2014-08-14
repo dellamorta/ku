@@ -2,6 +2,9 @@
 #define KAR_KONTROLLER_H
 
 #include "Arduino.h"
+
+#include <Adafruit_GPS.h>
+#include <Sabertooth.h>
 #include <LinearActuator.h>
 
 enum gear_t {
@@ -15,8 +18,9 @@ enum gear_t {
 };
 
 struct LinearActuatorConfig {
-  uint8_t id;
-  uint8_t motor_id;
+  Sabertooth* driver;
+  uint8_t motor;
+  uint8_t pos_pin;
 }
 
 struct LinearActuatorRange {
@@ -43,7 +47,13 @@ class Config {
 };
 
 class KarKontroller {  
-  KarKontroller();
+  KarKontroller(const LinearActuatorConfig throttle_config,
+                const LinearActuatorConfig brake_config,
+                const LinearActuatorConfig steering_config,
+                const LinearActuatorConfig shifter_config,
+                uint8_t ignition_pin,
+                uint8_t starter_pin,
+                Arduino_GPS* gps);
   
   // Sets the config
   void setConfig(const Config& config);
@@ -78,6 +88,7 @@ class KarKontroller {
   // Controls the gear shift.
   gear_t getGear();
   gear_t getGearTarget
+  bool isInGear(gear_t gear);
   void setGear(gear_t gear);
   
   // Turns the car on or off. Does nit actually start the car.
@@ -97,6 +108,18 @@ class KarKontroller {
   update();
 
  private:
+  
+  enum state_t {
+    OFF,
+    ON,
+    START,
+    DRIVE,
+    SHIFT,
+    SHUTDOWN
+  }  
+  
+  // Updates the state to a new state.
+  void updateState(state_t state);
  
   // Gets the position (from 0 - 255) of a LinearActuator. This is used by
   // functions such as getSteering() and getBrake();
@@ -107,20 +130,16 @@ class KarKontroller {
   void setLinearActuatorTarget(uint8_t value,
                                const LinearActuatorRange& range,
                                LinearActuator* actuator)
- 
-  enum state_t {
-    OFF,
-    START,
-    DRIVE,
-    SHIFT,
-    SHUTDOWN
-  }
   
   // The current state and the last time (in ms) that the state changed.
   state_t state_;
   uint32_t last_state_change_;
   
   Config config_;
+  
+  uint8_t ignition_pin_;
+  uint8_t starter_pin_;
+  Adafruit_GPS* gps_;
   
   uint8_t throttle_target_;
   LinearActuator throttle_;
