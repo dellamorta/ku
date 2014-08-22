@@ -4,17 +4,27 @@
 #include "Arduino.h"
 #include <LinearActuator.h>
 
-class KarKontroller {
-  enum gear_t {
-    PARK = 0,
-    REVERSE,
-    NEUTRAL,
-    DRIVE,
-    SECOND,
-    FIRST,
-    NUM_GEARS
-  };
+#define NUM_GEARS 6
+
+enum gear_t {
+  PARK = 0,
+  REVERSE,
+  NEUTRAL,
+  DRIVE,
+  SECOND,
+  FIRST,
+};
+
+enum state_t {
+  OFF,
+  START,
+  RUNNING,
+  SHIFT,
+  SHUTDOWN
+};
   
+class KarKontroller {
+ public:  
   struct LinearActuatorConfig {
     uint16_t min_pos;
     uint16_t max_pos;
@@ -27,7 +37,7 @@ class KarKontroller {
     LinearActuatorConfig throttle;
     LinearActuatorConfig brake;
     LinearActuatorConfig steering;
-    uint16_t gear_pos[gear_t::NUM_GEARS];
+    uint16_t gear_pos[NUM_GEARS];
   
     //bool readFromEeprom(uint16_t address);
     //void writeToEeprom(uint16_t address);
@@ -38,10 +48,11 @@ class KarKontroller {
     //                                         const LinearActuatorConfig& data);
   };
   
-  KarKontroller();
-  
-  // Sets the config
-  void setConfig(const Config& config);
+  KarKontroller(LinearActuator* throttle,
+                LinearActuator* brake,
+                LinearActuator* shifter,
+                LinearActuator* steering,
+                const Config& konfig);
   
   // Members that get and set the car's physical controls.
   // In general, there are 3 functions for each control:
@@ -72,45 +83,41 @@ class KarKontroller {
   
   // Controls the gear shift.
   gear_t getGear();
-  gear_t getGearTarget
+  gear_t getGearTarget();
   void setGear(gear_t gear);
   
   // Turns the car on or off. Does nit actually start the car.
-  turnOn():
-  turnOff();
+  void turnOn();
+  void turnOff();
   boolean isRunning();
   
   // Turns the starter motor on or off.
-  void starterOn():
+  void starterOn();
   void starterOff();
   bool isStarterOn();
   
   // Stops the car, puts it in park, and shuts off the engine.
-  shutdown();
+  void shutdown();
   
   // Called every loop()
-  update();
+  void update();
 
  private:
- 
-  enum state_t {
-    OFF,
-    START,
-    DRIVE,
-    SHIFT,
-    SHUTDOWN
-  }
   
   // The current state and the last time (in ms) that the state changed.
   state_t state_;
   uint32_t last_state_change_;
   
+  LinearActuator* throttle_;
+  LinearActuator* brake_;
+  LinearActuator* shifter_;
+  LinearActuator* steering_;
   Config config_;
   
   uint8_t throttle_target_;
   uint8_t brake_target_;
   uint8_t steering_target_;
   gear_t gear_;
-}
+};
 
 #endif

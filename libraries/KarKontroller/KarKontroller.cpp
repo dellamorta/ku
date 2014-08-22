@@ -16,11 +16,16 @@ KarKontroller::Config::Config() {
   gear_pos[FIRST] = 900;
 }
 
-KarKontroller::KarKontroller() {}
-
-KarKontroller::setConfig(const Config& config) {
-  config_ = config;
-}
+KarKontroller::KarKontroller(:inearActuator* throttle,
+                             LinearActuator* brake,
+                             LinearActuator* shifter,
+                             LinearActuator* steering,
+                             const Config& konfig)
+                             : throttle_(throttle),
+                               brake_(brake),
+                               shifter_(shifter),
+                               steering_(steering),
+                               config_(konfig) {}
 
 
 uint8_t KarKontroller::getThrottle() {
