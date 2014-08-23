@@ -16,11 +16,11 @@ enum gear_t {
 };
 
 enum state_t {
-  OFF,
-  START,
+  SLEEPING,
+  STARTING,
   RUNNING,
-  SHIFT,
-  SHUTDOWN
+  SHIFTING,
+  SHUTING_DOWN
 };
   
 class KarKontroller {

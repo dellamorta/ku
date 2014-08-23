@@ -29,7 +29,7 @@ KarKontroller::KarKontroller(:inearActuator* throttle,
 
 
 uint8_t KarKontroller::getThrottle() {
-  uint16_t = contstrain()
+  uint16_t value = contstrain(throttle_.get)
   return map(value, 
              config_.throttle.min,
              config_.throttle.max,
