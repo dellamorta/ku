@@ -2,6 +2,9 @@
 #define KAR_KONTROLLER_H
 
 #include "Arduino.h"
+
+#include <Adafruit_GPS.h>
+#include <Sabertooth.h>
 #include <LinearActuator.h>
 
 #define NUM_GEARS 6
@@ -32,8 +35,6 @@ class KarKontroller {
 
   class Config {
    public:
-    Config();
-
     LinearActuatorConfig throttle;
     LinearActuatorConfig brake;
     LinearActuatorConfig steering;
@@ -52,8 +53,10 @@ class KarKontroller {
                 LinearActuator* brake,
                 LinearActuator* shifter,
                 LinearActuator* steering,
+                uint8_t ignition_pin,
+                uint8_t starter_pin,
                 const Config& konfig);
-  
+    
   // Members that get and set the car's physical controls.
   // In general, there are 3 functions for each control:
   //   getXXX() - returns the CURRENT value of the control
@@ -84,6 +87,7 @@ class KarKontroller {
   // Controls the gear shift.
   gear_t getGear();
   gear_t getGearTarget();
+  bool isInGear(gear_t gear);
   void setGear(gear_t gear);
   
   // Turns the car on or off. Does nit actually start the car.
@@ -102,7 +106,19 @@ class KarKontroller {
   // Called every loop()
   void update();
 
- private:
+ private:  
+  // Updates the state to a new state.
+  void updateState(state_t state);
+ 
+  // Gets the position (from 0 - 255) of a LinearActuator. This is used by
+  // functions such as getSteering() and getBrake();
+  uint8_t getLinearActuatorPos(const LinearActuatorRangeg& range,
+                               const LinearActuator& actuator);
+  
+  // Sets the target position (from 0 - 255) of a LinearActuator.
+  void setLinearActuatorTarget(uint8_t value,
+                               const LinearActuatorRange& range,
+                               LinearActuator* actuator)
   
   // The current state and the last time (in ms) that the state changed.
   state_t state_;
@@ -114,10 +130,16 @@ class KarKontroller {
   LinearActuator* steering_;
   Config config_;
   
+  uint8_t ignition_pin_;
+  uint8_t starter_pin_;
+  //Adafruit_GPS* gps_;
+  
   uint8_t throttle_target_;
+  
   uint8_t brake_target_;
+  
   uint8_t steering_target_;
-  gear_t gear_;
+  gear_t gear_target_;
 };
 
 #endif

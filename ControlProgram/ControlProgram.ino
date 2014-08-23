@@ -1,4 +1,5 @@
 
+#include <KarKontroller.h>
 #include <Sabertooth.h>
 #include <PS3BT.h>
 #include <PS3USB.h>
@@ -15,17 +16,20 @@
 #define SHIFTER_POS_PIN 14
 #define THROTTLE_POS_PIN 13
 #define STEERING_POS_PIN 12
+#define IGNITION_PIN 51
+#define STARTER_PIN 52
 
 Sabertooth throttleClutch(135, Serial1);
 Sabertooth steeringBrake(129, Serial1);
 
+<<<<<<< HEAD
 LinearActuator throttle(&throttleClutch, 1, THROTTLE_POS_PIN);
 LinearActuator shifter(&throttleClutch, 2, SHIFTER_POS_PIN);
 LinearActuator brake(&steeringBrake, 2, BRAKE_POS_PIN);
 LinearActuator steering(&steeringBrake, 1, STEERING_POS_PIN);
 
 KarKontroller::Config konfig;
-KarKontroller kontroller(&throttle, &brake, &shifter, &steering, konfig);
+KarKontroller ku(&throttle, &brake, &shifter, &steering, IGNITION_PIN, STEERING_PIN, konfig);
 
 USB Usb;
 //USBHub Hub1(&Usb); // Some dongles have a hub inside
@@ -52,21 +56,29 @@ void setup() {
   Serial.print(F("\r\nPS3 Bluetooth Library Started"));
 }
 
-void incrementMotor(int* moto) {
-  *moto += 32;
-  if (*moto > 127) {
-    *moto = -127;
-  }
-}
-
-int translateHat(int hat) {
-  return map(hat, 0, 255, 0, 1023);
-}
 int last_update = 0;
 
 void loop() {
   Usb.Task();
   if (PS3.PS3Connected) {
+    ku.setSteering(PS3.getAnalogHat(LeftHatX));
+    uint8_t speed_control = PS3.getAnalogHat(LeftHatX);
+    if (speed_control >= 127) {
+      ku.setThrottle((speed_control - 127) * 2)
+      ku.setBrake(0)
+    } else {
+      ku.setThrottle(0);
+      ku.setBrake((127 - speed_control) * 2);
+    }
+    if (PS3.getButtonPress(TRIANGLE)) {
+      ku.setGear(PARK);
+    }
+    if (PS3.getButtonPress(CIRCLE)) {
+      ku.setGear(DRIVE);
+    }
+    if (PS3.getButtonPress(SQUARE)) {
+      ku.setGear(REVERSE);
+    }
 /*    Serial.print(F("\r\nThrottle: "));
     Serial.print(throttle.getPosition());
     Serial.print(F("\r\nBrake: "));
@@ -82,41 +94,42 @@ void loop() {
     Serial.print(F("\tRightHatY: "));
     Serial.print(translateHat(PS3.getAnalogHat(RightHatX)));
     Serial.println("");*/
+<<<<<<< HEAD
     if (millis() - last_update > 10) {
-      kontroller.setSteering(PS3.getAnalogHat(RightHatX));
+      ku.setSteering(PS3.getAnalogHat(RightHatX));
       int brakeThrottle = PS3.getAnalogHat(LeftHatY) - 127;
       if (brakeThrottle < 0) {
-        kontroller.setThrottle(0);
-        kontroller.setBrake(-2 * brakeThrottle);
+        ku.setThrottle(0);
+        ku.setBrake(-2 * brakeThrottle);
       } else {
-        kontroller.setBrake(0);
-        kontroller.setThrottle(2 * brakeThrottle);
+        ku.setBrake(0);
+        ku.setThrottle(2 * brakeThrottle);
       }
       
       if (PS3.getButtonClick(UP))
-        kontroller.setGear(FIRST);
+        ku.setGear(FIRST);
       if (PS3.getButtonClick(DOWN))
-        kontroller.setGear(REVERSE);
+        ku.setGear(REVERSE);
       if (PS3.getButtonClick(RIGHT))
-        kontroller.setGear(PARK);
+        ku.setGear(PARK);
 
-      if (!kontroller.isStarterOn() && PS3.getButtonPress(START)) {
-        kontroller.starterOn();
+      if (!ku.isStarterOn() && PS3.getButtonPress(START)) {
+        ku.starterOn();
       }
-      if (kontroller.isStarterOn() && !PS3.getButtonPress(START)) {
-        kontroller.starterOff();
+      if (ku.isStarterOn() && !PS3.getButtonPress(START)) {
+        ku.starterOff();
       }
       
       if (PS3.getButtonClick(SELECT)) {
-        if (kontroller.isRunning()) {
-          kontroller.turnOff();
+        if (ku.isRunning()) {
+          ku.turnOff();
         } else {
-          kontroller.turnOn();
+          ku.turnOn();
         }
       }
         
       last_update = millis();
     }
   }    
-  kontroller.update();
+  ku.update();
 }
