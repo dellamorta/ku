@@ -3,7 +3,6 @@
 
 #include "Arduino.h"
 
-#include <Adafruit_GPS.h>
 #include <Sabertooth.h>
 #include <LinearActuator.h>
 
@@ -20,10 +19,11 @@ enum gear_t {
 
 enum state_t {
   SLEEPING,
+  WAKING,
   STARTING,
   RUNNING,
   SHIFTING,
-  SHUTING_DOWN
+  SHUTTING_DOWN
 };
   
 class KarKontroller {
@@ -40,6 +40,7 @@ class KarKontroller {
     LinearActuatorConfig steering;
     uint16_t gear_pos[NUM_GEARS];
   
+    Config();
     //bool readFromEeprom(uint16_t address);
     //void writeToEeprom(uint16_t address);
   
@@ -56,6 +57,8 @@ class KarKontroller {
                 uint8_t ignition_pin,
                 uint8_t starter_pin,
                 const Config& konfig);
+                
+  void setConfig(const Config& config);
     
   // Members that get and set the car's physical controls.
   // In general, there are 3 functions for each control:
@@ -93,7 +96,7 @@ class KarKontroller {
   // Turns the car on or off. Does nit actually start the car.
   void turnOn();
   void turnOff();
-  boolean isRunning();
+  bool isRunning();
   
   // Turns the starter motor on or off.
   void starterOn();
@@ -112,13 +115,13 @@ class KarKontroller {
  
   // Gets the position (from 0 - 255) of a LinearActuator. This is used by
   // functions such as getSteering() and getBrake();
-  uint8_t getLinearActuatorPos(const LinearActuatorRangeg& range,
-                               const LinearActuator& actuator);
+  uint8_t getLinearActuatorPos(const LinearActuatorConfig& range,
+                               LinearActuator* actuator);
   
   // Sets the target position (from 0 - 255) of a LinearActuator.
   void setLinearActuatorTarget(uint8_t value,
-                               const LinearActuatorRange& range,
-                               LinearActuator* actuator)
+                               const LinearActuatorConfig& range,
+                               LinearActuator* actuator);
   
   // The current state and the last time (in ms) that the state changed.
   state_t state_;

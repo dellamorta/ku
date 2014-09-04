@@ -22,14 +22,13 @@
 Sabertooth throttleClutch(135, Serial1);
 Sabertooth steeringBrake(129, Serial1);
 
-<<<<<<< HEAD
 LinearActuator throttle(&throttleClutch, 1, THROTTLE_POS_PIN);
 LinearActuator shifter(&throttleClutch, 2, SHIFTER_POS_PIN);
 LinearActuator brake(&steeringBrake, 2, BRAKE_POS_PIN);
 LinearActuator steering(&steeringBrake, 1, STEERING_POS_PIN);
 
 KarKontroller::Config konfig;
-KarKontroller ku(&throttle, &brake, &shifter, &steering, IGNITION_PIN, STEERING_PIN, konfig);
+KarKontroller ku(&throttle, &brake, &shifter, &steering, IGNITION_PIN, STARTER_PIN, konfig);
 
 USB Usb;
 //USBHub Hub1(&Usb); // Some dongles have a hub inside
@@ -64,8 +63,8 @@ void loop() {
     ku.setSteering(PS3.getAnalogHat(LeftHatX));
     uint8_t speed_control = PS3.getAnalogHat(LeftHatX);
     if (speed_control >= 127) {
-      ku.setThrottle((speed_control - 127) * 2)
-      ku.setBrake(0)
+      ku.setThrottle((speed_control - 127) * 2);
+      ku.setBrake(0);
     } else {
       ku.setThrottle(0);
       ku.setBrake((127 - speed_control) * 2);
@@ -94,7 +93,6 @@ void loop() {
     Serial.print(F("\tRightHatY: "));
     Serial.print(translateHat(PS3.getAnalogHat(RightHatX)));
     Serial.println("");*/
-<<<<<<< HEAD
     if (millis() - last_update > 10) {
       ku.setSteering(PS3.getAnalogHat(RightHatX));
       int brakeThrottle = PS3.getAnalogHat(LeftHatY) - 127;
